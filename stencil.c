@@ -50,12 +50,36 @@ int main(int argc, char *argv[]) {
 }
 
 void stencil(const int nx, const int ny, float *restrict image, float *restrict  tmp_image) {
+  /*//4 corner pixels
+  tmp_image[0] = image[0] * 0.6f + image[1] * 0.1f + image[ny] * 0.1f;
+  tmp_image[ny-1] = image[ny-1] * 0.6f + image[ny-2] * 0.1f + image[2*ny-1] * 0.1f;
+  tmp_image[(nx-1)*ny] = image[(nx-1)*ny] * 0.6f + image[(nx-2)*ny] * 0.1f + image[(nx-1)*ny+1] * 0.1f;
+  tmp_image[(nx-1)*ny+(ny-1)] = image[(nx-1)*ny+(ny-1)] * 0.6f + image[(nx-1)*ny+(ny-2)] * 0.1f + image[(nx-2)*ny+(ny-2)] * 0.1f;
+  //Top row
+  for (int j = 1; j < ny-1; j++) {
+    tmp_image[j] = image[j] * 0.6f + image[j-1] * 0.1f + image[j+1] * 0.1f + image[j+ny] * 0.1f;
+  }
+  //Bottom row
+  for (int j = 1; j < ny-1; j++) {
+    tmp_image[j+(nx-1)*ny] = image[j+(nx-1)*ny] * 0.6f + image[j+(nx-1)*ny-1] * 0.1f + image[j+(nx-1)*ny+1] * 0.1f + image[j+(nx-2)*ny] * 0.1f;
+  }
+  //Left column
+  for (int i = 1; i < nx-1; i++) {
+    tmp_image[i*ny] = image[i*ny] * 0.6f;
+    tmp_image[i*ny] += (image[(i-1)*ny] * 0.1f + image[i*ny+1] * 0.1f + image[(i+1)*ny] * 0.1f);
+  }
+  //Right column
+  for (int i = 1; i < nx-1; i++) {
+    tmp_image[i*ny+ny-1] = image[i*ny+ny-1] * 0.6f;
+    tmp_image[i*ny+ny-1] += (image[(i-1)*ny+ny-1] * 0.1f + image[i*ny-1+ny-1] * 0.1f + image[(i+1)*ny+ny-1] * 0.1f);
+  }*/
+  //Middle section
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
       tmp_image[j+i*ny] = image[j+i*ny] * 0.6f;
-      if (i > 0)    tmp_image[j+i*ny] += image[j  +(i-1)*ny] * 0.1f;
-      if (i < nx-1) tmp_image[j+i*ny] += image[j  +(i+1)*ny] * 0.1f;
-      if (j > 0)    tmp_image[j+i*ny] += image[j-1+i*ny] * 0.1f;
+      if (i > 0) tmp_image[j+i*ny] += image[j  +(i-1)*ny] * 0.1f;
+      if (i < nx-1)  tmp_image[j+i*ny] += image[j  +(i+1)*ny] * 0.1f;
+      if (j > 0) tmp_image[j+i*ny] += image[j-1+i*ny] * 0.1f;
       if (j < ny-1) tmp_image[j+i*ny] += image[j+1+i*ny] * 0.1f;
     }
   }
