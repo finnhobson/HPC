@@ -6,10 +6,10 @@
 // Define output file name
 #define OUTPUT_FILE "stencil.pgm"
 
-void stencil(const unsigned short nx, const unsigned short ny, float *  image, float *  tmp_image);
-void init_image(const unsigned short nx, const unsigned short ny, float *  image, float *  tmp_image);
-void output_image(const char * file_name, const unsigned short nx, const unsigned short ny, float *image);
-float wtime(void);
+void stencil(const int nx, const int ny, float *restrict image, float *restrict tmp_image);
+void init_image(const int nx, const int ny, float *restrict image, float *restrict tmp_image);
+void output_image(const char * file_name, const int nx, const int ny, float *restrict image);
+double wtime(void);
 
 int main(int argc, char *argv[]) {
 
@@ -20,24 +20,24 @@ int main(int argc, char *argv[]) {
   }
 
   // Initiliase problem dimensions from command line arguments
-  unsigned short nx = atoi(argv[1]);
-  unsigned short ny = atoi(argv[2]);
-  unsigned short niters = atoi(argv[3]);
+  int nx = atoi(argv[1]);
+  int ny = atoi(argv[2]);
+  int niters = atoi(argv[3]);
 
   // Allocate the image
-  float *image = malloc(sizeof(float)*nx*ny);
-  float *tmp_image = malloc(sizeof(float)*nx*ny);
+  float *restrict image = malloc(sizeof(float)*nx*ny);
+  float *restrict tmp_image = malloc(sizeof(float)*nx*ny);
 
   // Set the input image
   init_image(nx, ny, image, tmp_image);
 
   // Call the stencil kernel
-  float tic = wtime();
-  for (unsigned short t = 0; t < niters; ++t) {
+  double tic = wtime();
+  for (int t = 0; t < niters; ++t) {
     stencil(nx, ny, image, tmp_image);
     stencil(nx, ny, tmp_image, image);
   }
-  float toc = wtime();
+  double toc = wtime();
 
 
   // Output
@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
   free(image);
 }
 
-void stencil(const unsigned short nx, const unsigned short ny, float *  image, float *  tmp_image) {
-  for (unsigned short j = 0; j < ny; ++j) {
-    for (unsigned short i = 0; i < nx; ++i) {
+void stencil(const int nx, const int ny, float *restrict image, float *restrict  tmp_image) {
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
       tmp_image[j+i*ny] = image[j+i*ny] * 0.6f;
       if (i > 0)    tmp_image[j+i*ny] += image[j  +(i-1)*ny] * 0.1f;
       if (i < nx-1) tmp_image[j+i*ny] += image[j  +(i+1)*ny] * 0.1f;
@@ -62,20 +62,20 @@ void stencil(const unsigned short nx, const unsigned short ny, float *  image, f
 }
 
 // Create the input image
-void init_image(const unsigned short nx, const unsigned short ny, float *  image, float *  tmp_image) {
+void init_image(const int nx, const int ny, float *restrict image, float *restrict tmp_image) {
   // Zero everything
-  for (unsigned short j = 0; j < ny; ++j) {
-    for (unsigned short i = 0; i < nx; ++i) {
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
       image[j+i*ny] = 0.0f;
       tmp_image[j+i*ny] = 0.0f;
     }
   }
 
   // Checkerboard
-  for (unsigned short j = 0; j < 8; ++j) {
-    for (unsigned short i = 0; i < 8; ++i) {
-      for (unsigned short jj = j*ny/8; jj < (j+1)*ny/8; ++jj) {
-        for (unsigned short ii = i*nx/8; ii < (i+1)*nx/8; ++ii) {
+  for (int j = 0; j < 8; ++j) {
+    for (int i = 0; i < 8; ++i) {
+      for (int jj = j*ny/8; jj < (j+1)*ny/8; ++jj) {
+        for (int ii = i*nx/8; ii < (i+1)*nx/8; ++ii) {
           if ((i+j)%2)
           image[jj+ii*ny] = 100.0f;
         }
@@ -85,7 +85,7 @@ void init_image(const unsigned short nx, const unsigned short ny, float *  image
 }
 
 // Routine to output the image in Netpbm grayscale binary image format
-void output_image(const char * file_name, const unsigned short nx, const unsigned short ny, float *image) {
+void output_image(const char * file_name, const int nx, const int ny, float *restrict image) {
 
   // Open output file
   FILE *fp = fopen(file_name, "w");
@@ -101,16 +101,16 @@ void output_image(const char * file_name, const unsigned short nx, const unsigne
   // This is used to rescale the values
   // to a range of 0-255 for output
   float maximum = 0.0f;
-  for (unsigned short j = 0; j < ny; ++j) {
-    for (unsigned short i = 0; i < nx; ++i) {
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
       if (image[j+i*ny] > maximum)
         maximum = image[j+i*ny];
     }
   }
 
   // Output image, converting to numbers 0-255
-  for (unsigned short j = 0; j < ny; ++j) {
-    for (unsigned short i = 0; i < nx; ++i) {
+  for (int j = 0; j < ny; ++j) {
+    for (int i = 0; i < nx; ++i) {
       fputc((char)(255.0f*image[j+i*ny]/maximum), fp);
     }
   }
@@ -121,7 +121,7 @@ void output_image(const char * file_name, const unsigned short nx, const unsigne
 }
 
 // Get the current time in seconds since the Epoch
-float wtime(void) {
+double wtime(void) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return tv.tv_sec + tv.tv_usec*1e-6;
